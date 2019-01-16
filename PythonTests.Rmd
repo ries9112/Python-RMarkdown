@@ -1,0 +1,58 @@
+---
+title: "Python Testing"
+author: "Riccardo Esclapon"
+date: "1/15/2019"
+output: html_document
+---
+
+
+
+```{r setup, include=FALSE}
+library(knitr)
+library(reticulate)
+knitr::knit_engines$set(python = reticulate::eng_python)
+
+use_python('C:/Users/info/.spyder-py3')
+#py_install('matplotlib.pyplot')
+```
+
+## Python Code
+
+```{python}
+#https://towardsdatascience.com/data-science-with-python-intro-to-data-visualization-and-matplotlib-5f799b7c6d82
+
+#If not working: https://github.com/ContinuumIO/anaconda-issues/issues/1270
+import matplotlib.pyplot as plt
+
+years = [1983, 1984, 1985, 1986, 1987]
+total_populations = [8939007, 8954518, 8960387, 8956741, 8943721]
+
+plt.plot(years, total_populations)
+plt.title("Year vs Population in Bulgaria")
+plt.xlabel("Year")
+plt.ylabel("Total Population")
+plt.show()
+```
+
+## R Code
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+
+## Mixing the two
+```{python}
+x=2*9
+```
+
+```{r}
+test <- py$x
+
+print(test)
+```
+
+```{python}
+print(r.test)
+
+```
