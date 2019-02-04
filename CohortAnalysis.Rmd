@@ -45,9 +45,13 @@ online['InvoiceMonth'] = online['InvoiceDate'].apply(get_month)
 grouping = online.groupby('CustomerID')['InvoiceMonth']
 
 online['CohortMonth'] = grouping.transform('min')
-
-print(online.head())
 ```
+
+```{r, echo=F}
+datatable(head(py$online))
+#datatable(head(py$online,1000)) #not loading all of them or too slow
+```
+
 
 ## Assign time offset value
 ```{python}
@@ -67,9 +71,114 @@ years_diff = invoice_year - cohort_year
 months_diff = invoice_month - cohort_month
 
 online['CohortIndex'] = years_diff * 12 + months_diff + 1
-print(online.head())
+```
+
+```{r, echo=F}
+datatable(head(py$online))
+#datatable(head(py$online,1000)) #not loading all of them or too slow
 ```
 
 
+## Count monthly active customers from each cohort
+```{python}
+#https://campus.datacamp.com/courses/customer-segmentation-in-python/cohort-analysis?ex=3
+
+grouping = online.groupby(['CohortMonth','CohortIndex'])
+
+cohort_data = grouping['CustomerID'].apply(pd.Series.nunique)
+
+cohort_data = cohort_data.reset_index()
+
+cohort_counts = cohort_data.pivot(index = 'CohortMonth',
+                                 columns = 'CohortIndex',
+                                 values = 'CustomerID')
+```
+
+```{r, echo=F}
+datatable(py$cohort_counts)
+```
 
 
+## Assign daily acquisition cohort
+
+```{python}
+# Define a function that will parse the date
+def get_day(x): return dt.datetime(x.year, x.month, x.day) 
+
+# Create InvoiceDay column
+online['InvoiceDay'] = online['InvoiceDate'].apply(get_day) 
+
+# Group by CustomerID and select the InvoiceDay value
+grouping = online.groupby('CustomerID')['InvoiceDay'] 
+
+# Assign a minimum InvoiceDay value to the dataset
+online['CohortDay'] = grouping.transform('min')
+```
+
+```{r}
+datatable(head(py$online))
+```
+
+
+## Calculate the time offset in days
+```{python}
+# Get the integers for date parts from the InvoiceDaycolumn
+invoice_year, invoice_month, invoice_day = get_date_int(online, 'InvoiceDay')
+
+# Get the integers for date parts from the CohortDay column
+cohort_year, cohort_month, cohort_day = get_date_int(online, 'CohortDay')
+
+# Calculate difference in years
+years_diff = invoice_year - cohort_year
+
+# Calculate difference in months
+months_diff = invoice_month - cohort_month
+
+# Calculate difference in days
+days_diff = invoice_day - cohort_day
+
+# Extract the difference in days from all previous values
+online['CohortIndex'] = years_diff * 365 + months_diff * 30 + days_diff + 1
+```
+
+```{r, echo=F}
+datatable(head(py$online))
+```
+
+## Calculate Retention rate
+
+```{python}
+#https://campus.datacamp.com/courses/customer-segmentation-in-python/cohort-analysis?ex=7
+#Store the first column as cohort_sizes
+cohort_sizes = cohort_counts.iloc[:,0]
+
+#Divide all values in the cohort_countss table by cohort_sizes
+retention = cohort_counts.divide(cohort_sizes, axis = 0)
+
+#Clean the retention table
+retention = retention.round(3)*100
+```
+
+```{r, echo=F}
+datatable(py$retention)
+```
+
+```{python}
+#https://campus.datacamp.com/courses/customer-segmentation-in-python/cohort-analysis?ex=7
+grouping = online.groupby(['CohortMonth','CohortIndex'])
+
+cohort_data = grouping['Quantity'].mean()
+
+cohort_data = cohort_data.reset_index()
+
+#This time getting the overall quantities, not percentages
+average_quantity = cohort_data.pivot(index = 'CohortMonth',
+                                     columns = 'CohortIndex',
+                                     values = 'Quantity')
+average_quantity = average_quantity.round(1)
+#average_quantity is only supposed to have 13 columns, but instead it has 373
+```
+
+```{r, echo=F}
+datatable(py$average_quantity)
+```
