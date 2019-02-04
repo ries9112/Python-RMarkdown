@@ -1,0 +1,75 @@
+---
+title: "Cohort Analysis"
+output:
+  html_document: default
+---
+
+```{r setup, echo = T}
+#https://campus.datacamp.com/courses/customer-segmentation-in-python/
+
+# Python environment
+library(reticulate)
+use_virtualenv('r-reticulate')
+
+#https://archive.ics.uci.edu/ml/datasets/Online%20Retail
+data <- read.csv("Online Retail.csv",stringsAsFactors = F)
+data$InvoiceDate <- as.Date(data$InvoiceDate, "%m/%d/%Y")
+data <- data.frame(data)
+
+library(DT)
+```
+
+
+```{python}
+#https://campus.datacamp.com/courses/customer-segmentation-in-python/cohort-analysis?ex=3
+import pandas as pd
+online = r.data
+```
+
+
+```{r}
+datatable(head(py$online))
+
+#How many rows?
+nrow(py$online)
+```
+
+## Assign acquisition month cohort
+```{python}
+#https://campus.datacamp.com/courses/customer-segmentation-in-python/cohort-analysis?ex=3
+import datetime as dt
+def get_month(x): return dt.datetime(x.year,x.month,1)
+
+online['InvoiceMonth'] = online['InvoiceDate'].apply(get_month)
+
+grouping = online.groupby('CustomerID')['InvoiceMonth']
+
+online['CohortMonth'] = grouping.transform('min')
+
+print(online.head())
+```
+
+## Assign time offset value
+```{python}
+#https://campus.datacamp.com/courses/customer-segmentation-in-python/cohort-analysis?ex=3
+
+#Extract integer values from data function
+def get_date_int(df, column):
+  year = df[column].dt.year
+  month = df[column].dt.month
+  day = df[column].dt.day
+  return year, month, day
+
+invoice_year, invoice_month, _ = get_date_int(online, 'InvoiceMonth')
+cohort_year, cohort_month, _ = get_date_int(online, 'CohortMonth')
+
+years_diff = invoice_year - cohort_year
+months_diff = invoice_month - cohort_month
+
+online['CohortIndex'] = years_diff * 12 + months_diff + 1
+print(online.head())
+```
+
+
+
+
