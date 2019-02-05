@@ -6,10 +6,23 @@ output:
 
 ```{r setup, echo = T}
 #https://campus.datacamp.com/courses/customer-segmentation-in-python/
-
 # Python environment
 library(reticulate)
-use_virtualenv('r-reticulate')
+#use_python("C:/Users/info/AppData/Roaming/Python/Python36",required=TRUE)
+#use_python('C:\\ProgramData\\Anaconda3\\envs\\r-reticulate\\python.exe')
+#use_condaenv(condaenv = "r-reticulate", conda = "C:/ProgramData/Anaconda3/envs/r-reticulate/python.exe")
+use_condaenv(condaenv = "r-reticulate")
+#use_virtualenv("r-reticulate")
+
+#TO INSTALL PYTHON PACKAGES:
+# START ANACONDA PROMPT AS ADMIN
+# RUN 'activate r-reticulate'
+# RUN 'python -m pip install numpy' (replace numpy with whatever library)
+
+
+#https://github.com/rstudio/reticulate/blob/master/vignettes/versions.Rmd
+
+
 
 #https://archive.ics.uci.edu/ml/datasets/Online%20Retail
 data <- read.csv("Online Retail.csv",stringsAsFactors = F)
@@ -115,7 +128,7 @@ grouping = online.groupby('CustomerID')['InvoiceDay']
 online['CohortDay'] = grouping.transform('min')
 ```
 
-```{r}
+```{r,echo=F}
 datatable(head(py$online))
 ```
 
@@ -154,31 +167,100 @@ cohort_sizes = cohort_counts.iloc[:,0]
 
 #Divide all values in the cohort_countss table by cohort_sizes
 retention = cohort_counts.divide(cohort_sizes, axis = 0)
-
-#Clean the retention table
-retention = retention.round(3)*100
 ```
 
 ```{r, echo=F}
-datatable(py$retention)
+datatable(round(py$retention,3)*100)
 ```
 
+
+<!-- COMMENTED OUT BECAUSE PRODUCING 374 COLUMNS INSTEAD OF 13 LIKE IT SHOULD -->
+
+<!-- ```{python} -->
+<!-- #https://campus.datacamp.com/courses/customer-segmentation-in-python/cohort-analysis?ex=7 -->
+<!-- grouping = online.groupby(['CohortMonth','CohortIndex']) -->
+
+<!-- cohort_data = grouping['Quantity'].mean() -->
+
+<!-- cohort_data = cohort_data.reset_index() -->
+
+<!-- average_quantity = cohort_data.pivot(index = 'CohortMonth', -->
+<!--                                  columns = 'CohortIndex', -->
+<!--                                  values = 'Quantity') -->
+
+<!-- average_quantity = average_quantity.round(1) -->
+<!-- #average_quantity is only supposed to have 13 columns, but instead it has 373 -->
+<!-- ``` -->
+
+
+<!-- ```{r, echo=F} -->
+<!-- datatable(py$average_quantity) -->
+<!-- ``` -->
+
+
+<!-- ## Calculate retention rate from scratch -->
+<!-- ```{python} -->
+<!-- # Count the number of unique values per customer ID -->
+<!-- cohort_data = grouping['CustomerID'].apply(pd.Series.nunique).reset_index() -->
+
+<!-- # Create a pivot  -->
+<!-- cohort_counts = cohort_data.pivot(index='CohortMonth', columns='CohortIndex', values='CustomerID') -->
+
+<!-- # Select the first column and store it to cohort_sizes -->
+<!-- cohort_sizes = cohort_counts.iloc[:,0] -->
+
+<!-- # Divide the cohort count by cohort sizes along the rows -->
+<!-- retention = cohort_counts.divide(cohort_sizes, axis=0) -->
+<!-- ``` -->
+
+<!-- ## Calculate average price -->
+<!-- ```{python} -->
+<!-- # Create a groupby object and pass the monthly cohort and cohort index as a list -->
+<!-- grouping = online.groupby(["CohortMonth", "CohortIndex"])  -->
+
+<!-- # Calculate the average of the unit price column -->
+<!-- cohort_data = grouping["UnitPrice"].mean() -->
+
+<!-- # Reset the index of cohort_data -->
+<!-- cohort_data = cohort_data.reset_index() -->
+
+<!-- # Create a pivot  -->
+<!-- average_quantity = cohort_data.pivot(index="CohortMonth", columns="CohortIndex", values="UnitPrice") -->
+<!-- print(average_quantity.round(1)) -->
+<!-- ``` -->
+
+<!-- ```{r,echo=F} -->
+<!-- datatable(round(py$average_quantity,digits = 1)) -->
+<!-- ``` -->
+
+## Build retention heatmap
 ```{python}
-#https://campus.datacamp.com/courses/customer-segmentation-in-python/cohort-analysis?ex=7
-grouping = online.groupby(['CohortMonth','CohortIndex'])
+import seaborn as sns
+import matplotlib
+import matplotlib.pyplot as plt
 
-cohort_data = grouping['Quantity'].mean()
+plt.figure(figsize=(10,8))
 
-cohort_data = cohort_data.reset_index()
+plt.title('Retention rates')
 
-#This time getting the overall quantities, not percentages
-average_quantity = cohort_data.pivot(index = 'CohortMonth',
-                                     columns = 'CohortIndex',
-                                     values = 'Quantity')
-average_quantity = average_quantity.round(1)
-#average_quantity is only supposed to have 13 columns, but instead it has 373
+sns.heatmap(data = retention,
+            annot = True,
+            fmt = '.0%',
+            vmin = 0.0,
+            vmax = 0.5,
+            cmap = 'BuGn',
+            yticklabels=['2010-12','2011-01','2011-02','2011-03','2011-04','2011-05','2011-06',
+                         '2011-07','2011-08','2011-09','2011-10','2011-11','2011-12'])
+plt.show()
 ```
 
-```{r, echo=F}
-datatable(py$average_quantity)
-```
+<!-- # ```{r} -->
+<!-- # #This uses dates as indexes correctly but is a popup -->
+<!-- # sns$heatmap(py$retention,fmt = '.0%',cmap = 'BuGn') -->
+<!-- # plt$show() -->
+<!-- # ``` -->
+
+
+
+
+
